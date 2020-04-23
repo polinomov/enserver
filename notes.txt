@@ -1,0 +1,7 @@
+To install protobuff:
+go get github.com/golang/protobuf/proto
+go install google.golang.org/protobuf/cmd/protoc-gen-go
+sudo apt install protobuf-compiler
+
+Compile:
+protoc --go_out=./ engine-cmd.proto
