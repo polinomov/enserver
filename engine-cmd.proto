@@ -1,0 +1,13 @@
+syntax = "proto3";
+package encommand;
+option go_package = "github.com/protocolbuffers/protobuf/examples/go/tutorialpb";
+
+message Command {
+  int32 opa = 1;
+  int32 opb = 2;  
+  int32 opc = 3;
+}
+
+message CommandList {
+  repeated Command cmd = 1;
+}
