@@ -1,0 +1,4 @@
+[submodule "protodef"]
+	path = protodef
+	url = ../engproto
+	branch = master
