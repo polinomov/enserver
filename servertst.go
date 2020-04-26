@@ -1,14 +1,33 @@
+
+/*
+ go install google.golang.org/protobuf/cmd/protoc-gen-go
+ protoc --go_out ./ enginecmd.proto 
+*/
+
 package main
 
 import (
     "fmt"
 	"log"
-    //"math/rand"
 	"gopkg.in/zeromq/goczmq.v4"
     "time"
-   // "github.com/golang/protobuf/proto"
+    "github.com/golang/protobuf/proto"
+     pb "github.com/polinomov/enserver/enbuffer/cmd"
  )
 
+ func addCmdToProto() {
+    c := pb.Command {
+        Opa : 1,
+        Opb : 2,
+        Opc : 3,
+    }
+    fmt.Printf("%d",c.Opa);
+    out, err := proto.Marshal(&c)
+    if err != nil {
+		log.Fatalln("Failed to Marshall", err)
+    }
+    fmt.Printf("The out type is : %T\n", out)    
+ }
 
  type CmdStruct struct {
 	n int
@@ -59,6 +78,7 @@ func fromClient(cmdBuff chan CmdStruct)  {
 
 func main(){
   log.Println("MAIN PUBSUB1")
+  addCmdToProto()
   cmdBuff := make(chan CmdStruct, 32)
   go fromClient(cmdBuff)
   go toClient(cmdBuff)
