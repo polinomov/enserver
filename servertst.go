@@ -1,7 +1,9 @@
 
 /*
  go install google.golang.org/protobuf/cmd/protoc-gen-go
- protoc --go_out ./ enginecmd.proto 
+
+ To generate proto go file call:
+   protoc --go_out ./ protodef/enginecmd.proto
 */
 
 package main
@@ -11,81 +13,67 @@ import (
 	"log"
 	"gopkg.in/zeromq/goczmq.v4"
     "time"
-    "github.com/golang/protobuf/proto"
+    //"github.com/golang/protobuf/proto"
      pb "github.com/polinomov/enserver/enbuffer/cmd"
  )
 
- func addCmdToProto() {
-    c := pb.Command {
-        Opa : 1,
-        Opb : 2,
-        Opc : 3,
-    }
-    fmt.Printf("%d",c.Opa);
-    out, err := proto.Marshal(&c)
-    if err != nil {
-		log.Fatalln("Failed to Marshall", err)
-    }
-    fmt.Printf("The out type is : %T\n", out)    
- }
 
- type CmdStruct struct {
-	n int
-	data string
-}
-
-func fromClient(cmdBuff chan CmdStruct)  {
+func fromClient(cmdBuff chan pb.Command)  {
     fmt.Printf("Start client channel type : %T \n",cmdBuff) 
     pullsocket,err := goczmq.NewPull("tcp://0.0.0.0:1234") 
     if err != nil {
         log.Fatal(err)
         return;
     }
-   // defer pullsocket.Destroy()
-   // pullsocket.Bind("tcp://127.0.0.1:1234")
+    defer pullsocket.Destroy()
     var i = 0
-    //var t_now = time.Now().UnixNano()
-    var t_old = time.Now().UnixNano()
-    for {
+     for {
         //log.Printf("About to read")
         recdata, rerr :=pullsocket.RecvMessage()
         if rerr != nil {
            log.Fatal(rerr)
         }
-        if (i%1000)== 0 {
-            var t_now = time.Now().UnixNano()
-            if  i<0 {
-                log.Printf("received '%s' ---", string(recdata[0]))
-            }
-            fmt.Printf("%d cap=%d\n",(t_now-t_old)/1e6, cap(recdata[0]))
-            t_old = t_now
-        }
-        //fmt.Printf(" ---- len = %d  cap = %d\n", len(cmdBuff), cap(cmdBuff))
-        cmdBuff <- CmdStruct{i, "blah"}
+        var ucmd = unmarshalCommand(recdata[0])
+        fmt.Printf( "--- len---=%d \n",len(ucmd.Cmd))
+
+        cmdBuff <- *ucmd.Cmd[0]
        // time.Sleep(time.Millisecond * 100)
         i = i + 1
     }
  }
 
- func toClient(cmdBuff chan CmdStruct){
+ func toClient(cmdBuff chan pb.Command){
+   // var opt = goczmq.SockSetSndbuf(1)
+    pubsocket, err := goczmq.NewPub("tcp://*:5555")
+    if err != nil {
+        log.Fatal(err)
+        return;
+    }
+    defer pubsocket.Destroy()
+    pubsocket.Bind("tcp://*:5555")
+    var rec = *addOneCommand(0)
     for {
-        rec := <- cmdBuff
-        rec.n++
-        //fmt.Printf("%d %s\n",rec.n,rec.data)
-       // time.Sleep(time.Millisecond*1000)
+        rec = <- cmdBuff
+        var dat = marshalCommand(&rec)
+        pubsocket.SendFrame(dat, goczmq.FlagNone)
+        fmt.Printf(" SendFrame\n")
     }
  }
 
 func main(){
   log.Println("MAIN PUBSUB1")
-  addCmdToProto()
-  cmdBuff := make(chan CmdStruct, 32)
+
+ // var cc = addOneCommand(123);
+ // var dat = marshalCommand(cc)
+ // unmarshalCommand(dat)
+
+  cmdBuff := make(chan pb.Command, 32)
   go fromClient(cmdBuff)
   go toClient(cmdBuff)
   for{
     time.Sleep(time.Millisecond*1000) 
   }
-  log.Println("MAIN DONE")
+  //log.Println("MAIN DONE")
   
   /*
   var opt = goczmq.SockSetSndbuf(1)
