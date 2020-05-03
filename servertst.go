@@ -13,6 +13,9 @@ import (
 	"log"
 	"gopkg.in/zeromq/goczmq.v4"
     "time"
+    "plugin"
+    "os"
+   // "io/ioutil"
     //"github.com/golang/protobuf/proto"
      pb "github.com/polinomov/enserver/enbuffer/cmd"
  )
@@ -60,8 +63,61 @@ func fromClient(cmdBuff chan pb.Command)  {
     }
  }
 
+ func soCallBack( s string){
+    fmt.Printf("soCallBack %s\n", s)  
+ }
+
+ func loadPlugIn( plgname string){
+    _, err := os.Stat(plgname)
+    if err != nil {
+        fmt.Printf("Can not find file %s\n", plgname)
+    } else {
+        fmt.Printf("found %s\n", plgname)
+    }
+    
+    p, err := plugin.Open(plgname)
+    if err != nil {
+        log.Fatal(err)
+    } 
+    v, err := p.Lookup("V")
+    if err != nil {
+	    log.Fatal(err)
+    }
+    f, err := p.Lookup("F1")
+    if err != nil {
+	    log.Fatal(err)
+    }   
+    *v.(*int) = 7
+    f.(func())() 
+
+    msg, err := p.Lookup("Msg")
+    if err != nil { log.Fatal(err) }
+    *msg.(*string) = "BLAH"
+
+   
+    
+    cbFunc, err := p.Lookup("TheCallBack")
+    if err != nil { log.Fatal(err) }
+    var xerr = *cbFunc.(*func(string))
+    *cbFunc.(*func(string))  =  soCallBack
+    fmt.Printf("xerr type : %T \n",  xerr)
+
+    procFunc, err := p.Lookup("F2")
+    if err != nil { log.Fatal(err) }
+    procFunc.(func())()
+ }
+
+
 func main(){
   log.Println("MAIN PUBSUB1")
+  /*
+  d1 := []byte("hello\ngo\n")
+  err := ioutil.WriteFile("datxxxxxx", d1, 0644)
+  if err != nil {
+    panic(err)
+  }  
+  */
+  loadPlugIn("libgame.so")
 
  // var cc = addOneCommand(123);
  // var dat = marshalCommand(cc)
