@@ -9,12 +9,21 @@
 package main
 
 import (
+    /*
+     #cgo LDFLAGS: libgame.so
+     #include <libgame.h>
+     void test_func( unsigned char *v){
+
+     }
+     */
+    "C"
     "fmt"
 	"log"
 	"gopkg.in/zeromq/goczmq.v4"
     "time"
-    "plugin"
+   // "plugin"
     "os"
+   // "unsafe"
    // "io/ioutil"
     //"github.com/golang/protobuf/proto"
      pb "github.com/polinomov/enserver/enbuffer/cmd"
@@ -30,7 +39,7 @@ func fromClient(cmdBuff chan pb.Command)  {
     }
     defer pullsocket.Destroy()
     var i = 0
-     for {
+    for {
         //log.Printf("About to read")
         recdata, rerr :=pullsocket.RecvMessage()
         if rerr != nil {
@@ -67,6 +76,7 @@ func fromClient(cmdBuff chan pb.Command)  {
     fmt.Printf("soCallBack %s\n", s)  
  }
 
+ /*
  func loadPlugIn( plgname string){
     _, err := os.Stat(plgname)
     if err != nil {
@@ -106,29 +116,34 @@ func fromClient(cmdBuff chan pb.Command)  {
     if err != nil { log.Fatal(err) }
     procFunc.(func())()
  }
+*/
 
+func callC( a[] uint8){
+    C.test_func( (*C.uchar)(&a[0]))
+}
+
+func testMe(){
+    var cc = addOneCommand(123);
+    var buf = marshalCommand(cc)
+    C.ProcessCmd(C.CString("oninit"), (*C.uchar)(&buf[0]), (C.int)(len(buf)) )
+}
 
 func main(){
-  log.Println("MAIN PUBSUB1")
-  /*
-  d1 := []byte("hello\ngo\n")
-  err := ioutil.WriteFile("datxxxxxx", d1, 0644)
-  if err != nil {
-    panic(err)
-  }  
-  */
-  loadPlugIn("libgame.so")
-
- // var cc = addOneCommand(123);
- // var dat = marshalCommand(cc)
- // unmarshalCommand(dat)
-
-  cmdBuff := make(chan pb.Command, 32)
-  go fromClient(cmdBuff)
-  go toClient(cmdBuff)
-  for{
-    time.Sleep(time.Millisecond*1000) 
-  }
+    log.Println("MAIN PUBSUB1")
+    _, err := os.Stat("libgame.so")
+    if err != nil {
+        fmt.Printf("Can not find file %s\n", "libgame.so")
+    } else {
+        fmt.Printf("found %s\n", "libgame.so")
+    }
+    testMe();
+ 
+    cmdBuff := make(chan pb.Command, 32)
+    go fromClient(cmdBuff)
+    go toClient(cmdBuff)
+    for{
+        time.Sleep(time.Millisecond*1000) 
+    }
   //log.Println("MAIN DONE")
   
   /*
