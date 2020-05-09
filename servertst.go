@@ -12,10 +12,18 @@ import (
     /*
      #cgo LDFLAGS: libgame.so
      #include <libgame.h>
+     #include <stdio.h>
      void test_func( unsigned char *v){
 
      }
-     */
+     int i_am_callback(int v){
+         printf(" HELLO CALLBACK\n");
+         return 0;
+     }
+     void cb_wrapper(callback_fcn func ){
+         func(777);
+     }
+      */
     "C"
     "fmt"
 	"log"
@@ -128,6 +136,10 @@ func testMe(){
     C.ProcessCmd(C.CString("oninit"), (*C.uchar)(&buf[0]), (C.int)(len(buf)) )
 }
 
+func testMe123( theCall C.callback_fcn ){
+    C.cb_wrapper(theCall)
+}
+
 func main(){
     log.Println("MAIN PUBSUB1")
     _, err := os.Stat("libgame.so")
@@ -136,7 +148,9 @@ func main(){
     } else {
         fmt.Printf("found %s\n", "libgame.so")
     }
-    testMe();
+    testMe123(C.callback_fcn(C.i_am_callback))
+    C.StartGameLoop()
+    testMe()
  
     cmdBuff := make(chan pb.Command, 32)
     go fromClient(cmdBuff)
