@@ -12,18 +12,23 @@ import (
     /*
      #cgo LDFLAGS: libgame.so
      #include <libgame.h>
-     #include <stdio.h>
-     void test_func( unsigned char *v){
+    // callback_function_type
+    extern int goCallbackHandler123(int, int);
+    
+   static int doAdd123(int a, int b) {
+         goCallbackHandler123(a, b);
+    }
+    static callback_function_type getCallBackPtr(){
+        return &doAdd123;
+    }
 
-     }
-     int i_am_callback(int v){
-         printf(" HELLO CALLBACK\n");
-         return 0;
-     }
-     void cb_wrapper(callback_fcn func ){
-         func(777);
-     }
-      */
+    static int beginGameLoop(){
+        printf(" HELLO CALLBACK\n");
+        StartGameLoop(doAdd123);
+        return 0;
+    }
+   
+     */
     "C"
     "fmt"
 	"log"
@@ -37,6 +42,12 @@ import (
      pb "github.com/polinomov/enserver/enbuffer/cmd"
  )
 
+//export goCallbackHandler123
+func goCallbackHandler123(a, b C.int) C.int {
+    fmt.Printf("############################# 123 ######################## %d %d \n",a,b)
+    return a + b
+}
+ 
 
 func fromClient(cmdBuff chan pb.Command)  {
     fmt.Printf("Start client channel type : %T \n",cmdBuff) 
@@ -127,7 +138,7 @@ func fromClient(cmdBuff chan pb.Command)  {
 */
 
 func callC( a[] uint8){
-    C.test_func( (*C.uchar)(&a[0]))
+   // C.test_func( (*C.uchar)(&a[0]))
 }
 
 func testMe(){
@@ -137,7 +148,7 @@ func testMe(){
 }
 
 func testMe123( theCall C.callback_fcn ){
-    C.cb_wrapper(theCall)
+   // C.cb_wrapper(theCall)
 }
 
 func main(){
@@ -148,8 +159,13 @@ func main(){
     } else {
         fmt.Printf("found %s\n", "libgame.so")
     }
-    testMe123(C.callback_fcn(C.i_am_callback))
-    C.StartGameLoop()
+   // var cb = C.getCallBackPtr()
+    //C.cb(C.int(1), C.int(2))
+   // C.doAdd123(C.int(1), C.int(2));
+    //MyAdd(1, 2);
+    //testMe123(C.callback_fcn(C.i_am_callback))
+    //C.StartGameLoop(cb)
+    C.beginGameLoop()
     testMe()
  
     cmdBuff := make(chan pb.Command, 32)

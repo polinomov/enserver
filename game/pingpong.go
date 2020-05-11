@@ -8,8 +8,11 @@ import(
 /*	
  #include <stdio.h>
  typedef int (*callback_fcn)(int);
- 
-
+ typedef int (*callback_function_type)(int,int);
+ static void wrap_xa(callback_function_type cbb, int a, int b)
+ {
+	 cbb( a,b);
+ }
  */
 	"C"
 	"fmt"
@@ -61,9 +64,10 @@ func SetUpdateCallBack( theCall C.callback_fcn ){
 }
 
 //export StartGameLoop
-func StartGameLoop(){
+func StartGameLoop( cbfunc C.callback_function_type){
 	fmt.Printf("START GAME LOOP\n");
-	go gameLoop()
+    C.wrap_xa(cbfunc,C.int(555),C.int(666))
+	go gameLoop(cbfunc)
 }
 
 type GObject struct{
@@ -73,9 +77,9 @@ type GObject struct{
 	 vx,vy,vz float32
 }
 
-var gObjMap = map[uint32]*GObject{}
 
-func gameLoop(){
+func gameLoop(cbfunc C.callback_function_type){
+	var gObjMap = map[uint32]*GObject{}
 	var rf = float32(0.01)
 	for i := 0; i < 1; i++ {
 		var xf = rand.Float32() * ( 1.0 - 2.0 * rf) + rf
@@ -106,6 +110,10 @@ func gameLoop(){
 			}
 			fmt.Printf( "id=%d ( %f %f)\n",k, gObjMap[k].px,gObjMap[k].py)
 		} 
+		fmt.Printf("---------------\n")
+		C.wrap_xa(cbfunc,C.int(555),C.int(666))
+		//AuxFunc(theCall)
+		//C.theCall(555)
    }
 }
 

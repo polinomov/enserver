@@ -6,6 +6,25 @@ import (
 	"github.com/golang/protobuf/proto"
 	 pb "github.com/polinomov/enserver/enbuffer/cmd"
  )
+// extern int goCallbackHandler456(int, int);
+// typedef int (*function_type)(int,int);
+// static int doAdd(int a, int b) {
+//     return goCallbackHandler456(a, b);
+// }
+// static function_type getMyFunc(){
+//		return &doAdd;
+// }
+import "C"
+
+//export goCallbackHandler456
+func goCallbackHandler456(a, b C.int) C.int {
+	fmt.Printf("------------- goCallbackHandler----------\n")
+    return a + b
+}
+
+func MyAdd(a, b int) int {
+   return int( C.doAdd( C.int(a), C.int(b)) )
+}
 
 
 // []uint8
