@@ -9,9 +9,14 @@ import(
  #include <stdio.h>
  typedef int (*callback_fcn)(int);
  typedef int (*callback_function_type)(int,int);
- static void wrap_xa(callback_function_type cbb, int a, int b)
+ typedef int (*callback_int_string_float)(int,char*,float);
+ static void wrap_xa(callback_function_type cbb, int objId, int attrId, float val)
  {
-	 cbb( a,b);
+	 cbb( 123,456);
+ }
+ static void wrap_int_string_float(callback_int_string_float cbb, int objId, char *pAttr, float val)
+ {
+	 cbb( objId,pAttr,val);
  }
  */
 	"C"
@@ -64,10 +69,9 @@ func SetUpdateCallBack( theCall C.callback_fcn ){
 }
 
 //export StartGameLoop
-func StartGameLoop( cbfunc C.callback_function_type){
+func StartGameLoop( cbfunc C.callback_int_string_float){
 	fmt.Printf("START GAME LOOP\n");
-    C.wrap_xa(cbfunc,C.int(555),C.int(666))
-	go gameLoop(cbfunc)
+ 	go gameLoop(cbfunc)
 }
 
 type GObject struct{
@@ -78,10 +82,10 @@ type GObject struct{
 }
 
 
-func gameLoop(cbfunc C.callback_function_type){
+func gameLoop(cbfunc C.callback_int_string_float){
 	var gObjMap = map[uint32]*GObject{}
 	var rf = float32(0.01)
-	for i := 0; i < 1; i++ {
+	for i := 0; i < 30; i++ {
 		var xf = rand.Float32() * ( 1.0 - 2.0 * rf) + rf
 		var yf = rand.Float32() * ( 1.0 - 2.0 * rf) + rf
 		var velx =  float32(0.02)
@@ -91,7 +95,8 @@ func gameLoop(cbfunc C.callback_function_type){
 
 	for{
 		//fmt.Printf("loop\n")
-		time.Sleep(time.Millisecond*1000)
+		start := time.Now()
+		time.Sleep(time.Millisecond*32)
 		for k := range gObjMap {
 			var isInside = true;
 			var pxn = gObjMap[k].px + gObjMap[k].vx;
@@ -108,13 +113,23 @@ func gameLoop(cbfunc C.callback_function_type){
 				gObjMap[k].px = pxn;
 				gObjMap[k].py = pyn;
 			}
-			fmt.Printf( "id=%d ( %f %f)\n",k, gObjMap[k].px,gObjMap[k].py)
+			//fmt.Printf( "id=%d ( %f %f)\n",k, gObjMap[k].px,gObjMap[k].py)
 		} 
-		fmt.Printf("---------------\n")
-		C.wrap_xa(cbfunc,C.int(555),C.int(666))
-		//AuxFunc(theCall)
-		//C.theCall(555)
-   }
+		
+		C.wrap_int_string_float(cbfunc, C.int(-1), C.CString("beg"), C.float(0))
+		for n := range gObjMap {
+			C.wrap_int_string_float(cbfunc, C.int(n), C.CString("x"), C.float(gObjMap[n].px))
+			C.wrap_int_string_float(cbfunc, C.int(n), C.CString("y"), C.float(gObjMap[n].py))
+		}
+		C.wrap_int_string_float(cbfunc, C.int(-2), C.CString("end"), C.float(0))
+		
+		t := time.Now()
+		elapsed := t.Sub(start)
+		var ms = elapsed.Milliseconds()
+		if(( ms > 50) || ( ms<32) ){
+			fmt.Printf("time= %d\n",ms)
+		}
+  }
 }
 
 func main(){

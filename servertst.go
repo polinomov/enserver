@@ -10,44 +10,96 @@ package main
 
 import (
     /*
-     #cgo LDFLAGS: libgame.so
-     #include <libgame.h>
-    // callback_function_type
-    extern int goCallbackHandler123(int, int);
+    #cgo LDFLAGS: libgame.so
+    #include <libgame.h>
+    extern int goGameCallBack(int, char*, float);
     
-   static int doAdd123(int a, int b) {
-         goCallbackHandler123(a, b);
+    static int call_proxy(int objId, char *pAttr, float val) {
+        goGameCallBack(objId, pAttr,val);
     }
-    static callback_function_type getCallBackPtr(){
-        return &doAdd123;
-    }
-
+  
     static int beginGameLoop(){
         printf(" HELLO CALLBACK\n");
-        StartGameLoop(doAdd123);
+        StartGameLoop(call_proxy);
         return 0;
     }
-   
      */
     "C"
     "fmt"
 	"log"
 	"gopkg.in/zeromq/goczmq.v4"
     "time"
-   // "plugin"
     "os"
+    //"runtime/debug"
    // "unsafe"
    // "io/ioutil"
-    //"github.com/golang/protobuf/proto"
+    "github.com/golang/protobuf/proto"
      pb "github.com/polinomov/enserver/enbuffer/cmd"
  )
 
-//export goCallbackHandler123
-func goCallbackHandler123(a, b C.int) C.int {
-    fmt.Printf("############################# 123 ######################## %d %d \n",a,b)
-    return a + b
+ type GRecord struct{
+    id int32
+    attr string 
+    val float32
 }
- 
+
+type Context struct{
+     //frame []GRecord
+     pubsocket* goczmq.Sock
+     protodata* pb.CommandList
+}
+
+var TheContext = &Context{}
+
+func (c *Context) initSocket()  {
+    fmt.Printf("Context init socket\n")
+    //var opt = goczmq.SockSetConflate(1)
+   // pubsocket, err := goczmq.NewPub("tcp://*:5555",opt)
+    pubsocket, err := goczmq.NewPub("tcp://*:5555")
+    fmt.Printf(" pubsocket TYPE IS %T\n", pubsocket)
+    if err != nil {
+        log.Fatal(err)
+    }
+    pubsocket.Bind("tcp://*:5555")
+    c.pubsocket = pubsocket
+}
+
+func ( c *Context) sendData(){
+    /*
+    cmdList := &pb.CommandList{}
+    cmd := &pb.Command { Name : "command-name", Opa : 1,  Opb : 2,Opc : 3,}
+    cmdList.Cmd = append(cmdList.Cmd, cmd)
+    out, err := proto.Marshal(cmdList)
+    */
+   // fmt.Printf("sendData\n");
+    out, err := proto.Marshal(c.protodata)
+   	if err != nil {
+		log.Fatalln("Failed to Marshall", err)
+	}
+    c.pubsocket.SendFrame(out, goczmq.FlagNone)
+}
+
+func ( c *Context) frameBegin(){
+    //fmt.Printf("frameBegin\n");
+    c.protodata  = &pb.CommandList{}
+}
+
+func ( c *Context) saveRecord( objId int32, attrName string, val float32){
+    //cmdList := &pb.CommandList{}
+    //fmt.Printf(" type : %T \n",cmdList) 
+    var ival = (int32)(val*10000.0);
+    cmd := &pb.Command { Name : attrName, Opa : objId,  Opb : ival,Opc : 3,}
+    c.protodata.Cmd = append(c.protodata.Cmd, cmd)
+   // fmt.Printf("#saveRecord %d %s %f \n", objId, attrName, val)
+}
+
+func ( c *Context) frameEnd(){
+    //fmt.Printf("frameEnd\n");
+    c.sendData()
+    c.protodata  = nil;
+}
+
+
 
 func fromClient(cmdBuff chan pb.Command)  {
     fmt.Printf("Start client channel type : %T \n",cmdBuff) 
@@ -73,9 +125,27 @@ func fromClient(cmdBuff chan pb.Command)  {
     }
  }
 
+ 
+//export goGameCallBack
+func goGameCallBack( objId C.int, attrName *C.char, attrValue float32) C.int {
+    var idd = int32(objId)
+    if( idd == -1){
+        TheContext.frameBegin();
+        return 0;
+    }
+    if( idd == -2){
+        TheContext.frameEnd();
+        return 0;
+    }
+
+    TheContext.saveRecord(int32(objId), C.GoString(attrName),  attrValue)
+    return 0
+}
+
  func toClient(cmdBuff chan pb.Command){
    // var opt = goczmq.SockSetSndbuf(1)
     pubsocket, err := goczmq.NewPub("tcp://*:5555")
+    fmt.Printf(" pubsocket TYPE IS %T\n", pubsocket)
     if err != nil {
         log.Fatal(err)
         return;
@@ -95,48 +165,7 @@ func fromClient(cmdBuff chan pb.Command)  {
     fmt.Printf("soCallBack %s\n", s)  
  }
 
- /*
- func loadPlugIn( plgname string){
-    _, err := os.Stat(plgname)
-    if err != nil {
-        fmt.Printf("Can not find file %s\n", plgname)
-    } else {
-        fmt.Printf("found %s\n", plgname)
-    }
-    
-    p, err := plugin.Open(plgname)
-    if err != nil {
-        log.Fatal(err)
-    } 
-    v, err := p.Lookup("V")
-    if err != nil {
-	    log.Fatal(err)
-    }
-    f, err := p.Lookup("F1")
-    if err != nil {
-	    log.Fatal(err)
-    }   
-    *v.(*int) = 7
-    f.(func())() 
-
-    msg, err := p.Lookup("Msg")
-    if err != nil { log.Fatal(err) }
-    *msg.(*string) = "BLAH"
-
-   
-    
-    cbFunc, err := p.Lookup("TheCallBack")
-    if err != nil { log.Fatal(err) }
-    var xerr = *cbFunc.(*func(string))
-    *cbFunc.(*func(string))  =  soCallBack
-    fmt.Printf("xerr type : %T \n",  xerr)
-
-    procFunc, err := p.Lookup("F2")
-    if err != nil { log.Fatal(err) }
-    procFunc.(func())()
- }
-*/
-
+ 
 func callC( a[] uint8){
    // C.test_func( (*C.uchar)(&a[0]))
 }
@@ -152,6 +181,7 @@ func testMe123( theCall C.callback_fcn ){
 }
 
 func main(){
+   // debug.SetGCPercent(-1)
     log.Println("MAIN PUBSUB1")
     _, err := os.Stat("libgame.so")
     if err != nil {
@@ -165,9 +195,8 @@ func main(){
     //MyAdd(1, 2);
     //testMe123(C.callback_fcn(C.i_am_callback))
     //C.StartGameLoop(cb)
+    TheContext.initSocket()
     C.beginGameLoop()
-    testMe()
- 
     cmdBuff := make(chan pb.Command, 32)
     go fromClient(cmdBuff)
     go toClient(cmdBuff)
