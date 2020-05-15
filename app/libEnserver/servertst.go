@@ -10,7 +10,7 @@ package main
 
 import (
     /*
-    #cgo LDFLAGS: libgame.so
+    #cgo LDFLAGS: -L. -lgame
     #include <libgame.h>
     extern int goGameCallBack(int, char*, float);
     
@@ -29,7 +29,7 @@ import (
 	"log"
 	"gopkg.in/zeromq/goczmq.v4"
     "time"
-    "os"
+   // "os"
     //"runtime/debug"
    // "unsafe"
    // "io/ioutil"
@@ -103,7 +103,7 @@ func ( c *Context) frameEnd(){
 
 func fromClient(cmdBuff chan pb.Command)  {
     fmt.Printf("Start client channel type : %T \n",cmdBuff) 
-    pullsocket,err := goczmq.NewPull("tcp://0.0.0.0:1234") 
+    pullsocket,err := goczmq.NewPull("tcp://*:1234") 
     if err != nil {
         log.Fatal(err)
         return;
@@ -181,59 +181,10 @@ func testMe123( theCall C.callback_fcn ){
 }
 
 func main(){
-   // debug.SetGCPercent(-1)
     log.Println("MAIN PUBSUB1")
-    _, err := os.Stat("libgame.so")
-    if err != nil {
-        fmt.Printf("Can not find file %s\n", "libgame.so")
-    } else {
-        fmt.Printf("found %s\n", "libgame.so")
-    }
-   // var cb = C.getCallBackPtr()
-    //C.cb(C.int(1), C.int(2))
-   // C.doAdd123(C.int(1), C.int(2));
-    //MyAdd(1, 2);
-    //testMe123(C.callback_fcn(C.i_am_callback))
-    //C.StartGameLoop(cb)
     TheContext.initSocket()
     C.beginGameLoop()
-    cmdBuff := make(chan pb.Command, 32)
-    go fromClient(cmdBuff)
-    go toClient(cmdBuff)
     for{
         time.Sleep(time.Millisecond*1000) 
-    }
-  //log.Println("MAIN DONE")
-  
-  /*
-  var opt = goczmq.SockSetSndbuf(1)
-  subsocket, _ := goczmq.NewPub("tcp://*:5555",opt)
- 
-  defer subsocket.Destroy()
-  subsocket.Bind("tcp://*:5555")
-  rand.Seed(time.Now().UnixNano())
-  
-   var bb [1024*1024]byte
-
-  
-   var i = 0
-   rand.Seed(time.Now().UnixNano())
-    // loop for a while aparently
-    for {
-       //  zipcode := rand.Intn(100000)
-       //  temperature := rand.Intn(215) - 80
-        // relhumidity := rand.Intn(50) + 10
-		var tc = time.Now().UnixNano()
-        i = i+ 1
-		//bb[0]  = 0;
-		//bb[255] = 123
-		
-        msg := fmt.Sprintf("%d %l %s", i,tc, "this-is-message")
-	    //time.Sleep(time.Second)
-		subsocket.SendFrame([]byte(msg), goczmq.FlagNone)
-		var s []byte= bb[0:1023*1024]
-		s[0] = 123
-		subsocket.SendFrame(s, goczmq.FlagNone)
-	}
-  */
+    } 
 }
