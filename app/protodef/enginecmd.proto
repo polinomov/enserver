@@ -1,0 +1,14 @@
+syntax = "proto3";
+package encommand;
+option go_package = "/src/github.com/polinomov/enserver/enbuffer/cmd";
+
+message Command {
+  string Name = 1;
+  int32 Opa = 2;
+  int32 Opb = 3;  
+  int32 Opc = 4;
+}
+
+message CommandList {
+  repeated Command Cmd = 1;
+}
