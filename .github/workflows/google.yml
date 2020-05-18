@@ -62,4 +62,4 @@ jobs:
     #Updares the compute engine instance
     - name: Update
       run: |
-        gcloud beta compute instances update-container enserver-2 --zone us-central1-a --container-image=gcr.io/gcr.io/basic-lock-271007/enserver
+        gcloud compute instances update-container enserver-2 --zone us-central1-a --container-image=gcr.io/gcr.io/basic-lock-271007/enserver
