@@ -10,10 +10,7 @@ import(
  typedef int (*callback_fcn)(int);
  typedef int (*callback_function_type)(int,int);
  typedef int (*callback_int_string_float)(int,char*,float);
- static void wrap_xa(callback_function_type cbb, int objId, int attrId, float val)
- {
-	 cbb( 123,456);
- }
+ 
  static void wrap_int_string_float(callback_int_string_float cbb, int objId, char *pAttr, float val)
  {
 	 cbb( objId,pAttr,val);
@@ -83,6 +80,10 @@ type GObject struct{
 
 
 func gameLoop(cbfunc C.callback_int_string_float){
+	var begString = C.CString("beg")
+	var endString = C.CString("end")
+	var xString = C.CString("x")
+	var yString = C.CString("y")
 	var gObjMap = map[uint32]*GObject{}
 	var rf = float32(0.01)
 	for i := 0; i < 30; i++ {
@@ -116,18 +117,20 @@ func gameLoop(cbfunc C.callback_int_string_float){
 			//fmt.Printf( "id=%d ( %f %f)\n",k, gObjMap[k].px,gObjMap[k].py)
 		} 
 		
-		C.wrap_int_string_float(cbfunc, C.int(-1), C.CString("beg"), C.float(0))
-		for n := range gObjMap {
-			C.wrap_int_string_float(cbfunc, C.int(n), C.CString("x"), C.float(gObjMap[n].px))
-			C.wrap_int_string_float(cbfunc, C.int(n), C.CString("y"), C.float(gObjMap[n].py))
-		}
-		C.wrap_int_string_float(cbfunc, C.int(-2), C.CString("end"), C.float(0))
 		
+		C.wrap_int_string_float(cbfunc, C.int(-1), begString, C.float(0))
+		for n := range gObjMap {
+			C.wrap_int_string_float(cbfunc, C.int(n), xString, C.float(gObjMap[n].px))
+			C.wrap_int_string_float(cbfunc, C.int(n), yString, C.float(gObjMap[n].py))
+		}
+		C.wrap_int_string_float(cbfunc, C.int(-2), endString, C.float(0))
+		
+
 		t := time.Now()
 		elapsed := t.Sub(start)
 		var ms = elapsed.Milliseconds()
-		if(( ms > 50) || ( ms<32) ){
-			fmt.Printf("time= %d\n",ms)
+		if(( ms > 60) || ( ms<32) ){
+			fmt.Printf("--time--= %d\n",ms)
 		}
   }
 }

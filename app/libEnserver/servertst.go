@@ -29,22 +29,12 @@ import (
 	"log"
 	"gopkg.in/zeromq/goczmq.v4"
     "time"
-   // "os"
-    //"runtime/debug"
-   // "unsafe"
-   // "io/ioutil"
     "github.com/golang/protobuf/proto"
      pb "github.com/polinomov/enserver/enbuffer/cmd"
  )
 
- type GRecord struct{
-    id int32
-    attr string 
-    val float32
-}
-
 type Context struct{
-     //frame []GRecord
+     numCmd int32
      pubsocket* goczmq.Sock
      protodata* pb.CommandList
 }
@@ -52,7 +42,7 @@ type Context struct{
 var TheContext = &Context{}
 
 func (c *Context) initSocket()  {
-    fmt.Printf("Context init socket\n")
+    fmt.Printf("---Context init socket---\n")
     //var opt = goczmq.SockSetConflate(1)
    // pubsocket, err := goczmq.NewPub("tcp://*:5555",opt)
     pubsocket, err := goczmq.NewPub("tcp://*:5555")
@@ -65,13 +55,6 @@ func (c *Context) initSocket()  {
 }
 
 func ( c *Context) sendData(){
-    /*
-    cmdList := &pb.CommandList{}
-    cmd := &pb.Command { Name : "command-name", Opa : 1,  Opb : 2,Opc : 3,}
-    cmdList.Cmd = append(cmdList.Cmd, cmd)
-    out, err := proto.Marshal(cmdList)
-    */
-   // fmt.Printf("sendData\n");
     out, err := proto.Marshal(c.protodata)
    	if err != nil {
 		log.Fatalln("Failed to Marshall", err)
@@ -80,26 +63,21 @@ func ( c *Context) sendData(){
 }
 
 func ( c *Context) frameBegin(){
-    //fmt.Printf("frameBegin\n");
     c.protodata  = &pb.CommandList{}
+    c.numCmd = 0
 }
 
 func ( c *Context) saveRecord( objId int32, attrName string, val float32){
-    //cmdList := &pb.CommandList{}
-    //fmt.Printf(" type : %T \n",cmdList) 
     var ival = (int32)(val*10000.0);
     cmd := &pb.Command { Name : attrName, Opa : objId,  Opb : ival,Opc : 3,}
     c.protodata.Cmd = append(c.protodata.Cmd, cmd)
-   // fmt.Printf("#saveRecord %d %s %f \n", objId, attrName, val)
-}
+ }
 
 func ( c *Context) frameEnd(){
-    //fmt.Printf("frameEnd\n");
+    //fmt.Printf("frameEnd num = %d\n",c.numCmd);
     c.sendData()
-    c.protodata  = nil;
+    c.protodata  = nil;  
 }
-
-
 
 func fromClient(cmdBuff chan pb.Command)  {
     fmt.Printf("Start client channel type : %T \n",cmdBuff) 
@@ -160,25 +138,6 @@ func goGameCallBack( objId C.int, attrName *C.char, attrValue float32) C.int {
         fmt.Printf(" SendFrame\n")
     }
  }
-
- func soCallBack( s string){
-    fmt.Printf("soCallBack %s\n", s)  
- }
-
- 
-func callC( a[] uint8){
-   // C.test_func( (*C.uchar)(&a[0]))
-}
-
-func testMe(){
-    var cc = addOneCommand(123);
-    var buf = marshalCommand(cc)
-    C.ProcessCmd(C.CString("oninit"), (*C.uchar)(&buf[0]), (C.int)(len(buf)) )
-}
-
-func testMe123( theCall C.callback_fcn ){
-   // C.cb_wrapper(theCall)
-}
 
 func main(){
     log.Println("MAIN PUBSUB1")
