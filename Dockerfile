@@ -2,6 +2,7 @@ FROM golang:buster
 
 EXPOSE 5555
 EXPOSE 1234
+EXPOSE 5556
 
 RUN apt-get update
 RUN apt-get install sudo

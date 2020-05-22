@@ -141,6 +141,11 @@ func goGameCallBack( objId C.int, attrName *C.char, attrValue float32) C.int {
 
 func main(){
     log.Println("MAIN PUBSUB1")
+    //var debugSocket *DebugSocket = new(DebugSocket)
+    //if !debugSocket.Init("5556"){
+    //  log.Fatalln("Failed to create debug socket")
+    //}
+
     TheContext.initSocket()
     C.beginGameLoop()
     for{

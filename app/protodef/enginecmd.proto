@@ -12,3 +12,8 @@ message Command {
 message CommandList {
   repeated Command Cmd = 1;
 }
+
+message DebugCommand{
+  string Command = 1;
+  repeated string Args = 2;
+}
