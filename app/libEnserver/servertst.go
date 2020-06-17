@@ -28,7 +28,6 @@ import (
     "fmt"
 	"log"
 	"gopkg.in/zeromq/goczmq.v4"
-    "time"
     "github.com/golang/protobuf/proto"
      pb "github.com/polinomov/enserver/enbuffer/cmd"
  )
@@ -141,14 +140,17 @@ func goGameCallBack( objId C.int, attrName *C.char, attrValue float32) C.int {
 
 func main(){
     log.Println("MAIN PUBSUB1")
-    //var debugSocket *DebugSocket = new(DebugSocket)
-    //if !debugSocket.Init("5556"){
-    //  log.Fatalln("Failed to create debug socket")
-    //}
+    var debugSocket *DebugSocket = new(DebugSocket)
+    var mainThread *ServerData = new(ServerData)
+
+    mainThread.Init()
+    if !debugSocket.Init(mainThread,"5556"){
+      log.Fatalln("Failed to create debug socket")
+    }
 
     TheContext.initSocket()
     C.beginGameLoop()
     for{
-        time.Sleep(time.Millisecond*1000) 
+      mainThread.Run()
     } 
 }
