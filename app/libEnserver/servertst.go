@@ -33,6 +33,7 @@ import (
      pb "github.com/polinomov/enserver/enbuffer/cmd"
  )
 
+ 
 type Context struct{
      numCmd int32
      pubsocket* goczmq.Sock
@@ -103,7 +104,6 @@ func fromClient(cmdBuff chan pb.Command)  {
     }
  }
 
- 
 //export goGameCallBack
 func goGameCallBack( objId C.int, attrName *C.char, attrValue float32) C.int {
     var idd = int32(objId)
@@ -141,6 +141,15 @@ func goGameCallBack( objId C.int, attrName *C.char, attrValue float32) C.int {
 
 func main(){
     log.Println("MAIN PUBSUB1")
+
+    var debugSocket *DebugSocket = new(DebugSocket)
+    var mainThread *ServerData = new(ServerData)
+
+    mainThread.Init()
+    if !debugSocket.Init(mainThread,"5556"){
+      log.Fatalln("Failed to create debug socket")
+    }
+
     TheContext.initSocket()
     C.beginGameLoop()
     for{
