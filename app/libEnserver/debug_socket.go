@@ -39,8 +39,8 @@ func (c *DebugSocket) run(){
   log.Println("DebugSocket started")
   for c.running {
     log.Println("Reading Frame")
-	recdata,_,rerr := c.socket.RecvFrame()
-	log.Println("Reading Frame HELLO-----------------")
+	  recdata,_,rerr := c.socket.RecvFrame()
+	  log.Println("Reading Frame HELLO-----------------")
     if rerr != nil {
       log.Println(rerr)
       continue
@@ -51,16 +51,16 @@ func (c *DebugSocket) run(){
     err != nil {
       log.Println("DebugSocket Error: Failed to Unmarshal Command", err)
       continue
-	}
+	  }
 	
-	log.Printf("Queing---------------- %p\n", c.mainThread)
-    c.mainThread.QueEvent(func (server *ServerData) bool {
+	  log.Printf("Queing---------------- %p\n", c.mainThread)
+      c.mainThread.QueEvent(func (server *ServerData) bool {
       log.Println("Hello From MainThread")
       return true
     })
-	log.Println("Qued------------------")
+	  log.Println("Qued------------------")
 
-	log.Println("Recieved Debug Command") 
+	  log.Println("Recieved Debug Command") 
     reply := []byte("Hello")
     c.socket.SendFrame(reply,goczmq.FlagNone)
   }
