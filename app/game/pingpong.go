@@ -94,6 +94,7 @@ func gameLoop(cbfunc C.callback_int_string_float){
 		gObjMap[uint32(i)] = &GObject{id: 0, rad:rf, px:xf , py:yf , pz:0, vx:velx, vy:vely, vz:0}
 	}
 
+	var tCount = 0;
 	for{
 		//fmt.Printf("loop\n")
 		start := time.Now()
@@ -129,9 +130,11 @@ func gameLoop(cbfunc C.callback_int_string_float){
 		t := time.Now()
 		elapsed := t.Sub(start)
 		var ms = elapsed.Milliseconds()
-		if(( ms > 60) || ( ms<32) ){
+		if(( ms > 60) || ( ms<32) || (tCount==100)){
 			fmt.Printf("--time--= %d\n",ms)
+			tCount = 0
 		}
+		tCount ++;
   }
 }
 
